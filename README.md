@@ -307,6 +307,7 @@ Task.Run используется для CPU-bound операция (вычис�
 3. [Примитивы синхронизации - Habr](https://habr.com/ru/articles/459514/)
 4. [Потокобезопасные коллекции - StackOverflow](https://ru.stackoverflow.com/questions/1261353\Потокобезопасные-списки-с)
 5. [Потокобезопасные коллекции - Habr](https://habr.com/ru/articles/473352/)
+6. [Когда использовать Task.Run и async/await - StackOverflow](https://stackoverflow.com/questions/18013523/when-correctly-use-task-run-and-when-just-async-await)
 
 ## Веб-программирование
 ### (J*, M*) Middleware в ASP .NET Core, какой паттерн реализует
