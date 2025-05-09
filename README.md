@@ -147,13 +147,6 @@
 
 <details>
     <summary>
-        (J, M*) Какие базовые методы есть в типе ```object```
-    </summary>
-    GetHashCode, Equals, ToString, GetType
-</details>
-
-<details>
-    <summary>
         Какой тип возвращает GetHashCode
     </summary>
     Int
@@ -186,8 +179,11 @@
     </summary>
 
 Object - базовый класс для всех типов в C#. Имеет следующие методы - GetType, Equals, GetHashCode, ToString (последние 3 из них - переопределяемые).
+
 ValueType - наследник Object. От него наследуются все типы, которые должны вести себя как значимые - struct, enum. Все встроенные значимые типы (bool, int, float и т.п. - на самом деле структуры).
+
 Различия между Object и ValueType проявляются в рантайме, т.к. рантайм по-особому относится к ValueType.
+
 Чтобы убрать это различие, ValueType можно привести к типу Object (боксинг), обратная операция каста Object к ValueType называется анбоксинг.
     
 </details>
