@@ -306,15 +306,17 @@ ValueType - наследник Object. От него наследуются вс
 
 Для value-type компилятор генерирует отдельные реализации дженериков. Для reference-type реализация одна.
 
-Часто используются ограничения на параметр T
-```where T : struct``` - ```T``` должен быть value-type
-```where T : new()``` - ```T``` должен содержать публичный конструктор без параметров
-```where T : IComparable<T>``` - ```T``` должен реализовать интерфейс ```IComparable<T>```
+Часто используются ограничения на параметр T:
+
+- ```where T : struct``` - ```T``` должен быть value-type
+- ```where T : new()``` - ```T``` должен содержать публичный конструктор без параметров
+- ```where T : IComparable<T>``` - ```T``` должен реализовать интерфейс ```IComparable<T>```
 
 В дженериках можно использовать ключевые слова ```in``` и ```out```.
 Ключевое слово ```out``` включает ковариантность.
 
-```class Message
+```
+class Message
 {
     public string Text { get; set; }
 }
@@ -330,7 +332,8 @@ class EmailMessenger : IMessenger<EmailMessage>
     {
         return new EmailMessage($"Email: {text}");
     }
-}```
+}
+```
 
 Использование
 
@@ -340,7 +343,8 @@ class EmailMessenger : IMessenger<EmailMessage>
 
 Ключевое слово ```in``` включает контравариантность.
 
-```interface IMessenger<in T>
+```
+interface IMessenger<in T>
 {
     void SendMessage(T message);
 }
@@ -350,7 +354,8 @@ class SimpleMessenger : IMessenger<Message>
     {
         Console.WriteLine($"Отправляется сообщение: {message.Text}");
     }
-}```
+}
+```
 
 Использование:
 
