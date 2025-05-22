@@ -291,12 +291,85 @@ ValueType - наследник Object. От него наследуются вс
 
 <details>
     <summary>
+        Дженерики
+    </summary>
+    
+Дженерики - это фича, позволяющая писать классы и методы, используя заглушку вместо типа, а реальный тип будет определен в процессе использования данного класса или метода.
+
+Пример:
+```List<int> list = new List<int>();```
+
+Плюсы:
+- типобезопасность (тип определяется в компайл-тайме)
+- переиспользование кода
+- отсутствие боксинга/анбоксинга
+
+Для value-type компилятор генерирует отдельные реализации дженериков. Для reference-type реализация одна.
+
+Часто используются ограничения на параметр T
+```where T : struct``` - ```T``` должен быть value-type
+```where T : new()``` - ```T``` должен содержать публичный конструктор без параметров
+```where T : IComparable<T>``` - ```T``` должен реализовать интерфейс ```IComparable<T>```
+
+В дженериках можно использовать ключевые слова ```in``` и ```out```.
+Ключевое слово ```out``` включает ковариантность.
+
+```class Message
+{
+    public string Text { get; set; }
+}
+class EmailMessage : Message { }
+
+interface IMessenger<out T>
+{
+    T WriteMessage(string text);
+}
+class EmailMessenger : IMessenger<EmailMessage>
+{
+    public EmailMessage WriteMessage(string text)
+    {
+        return new EmailMessage($"Email: {text}");
+    }
+}```
+
+Использование
+
+```IMessenger<Message> outlook = new EmailMessenger();```
+
+То есть более общему типу ```IMessenger<Message>``` можно присвоить более частный ```IMessenger<EmailMessage>```. Без использования out такой код не скомпилируется.
+
+Ключевое слово ```in``` включает контравариантность.
+
+```interface IMessenger<in T>
+{
+    void SendMessage(T message);
+}
+class SimpleMessenger : IMessenger<Message>
+{
+    public void SendMessage(Message message)
+    {
+        Console.WriteLine($"Отправляется сообщение: {message.Text}");
+    }
+}```
+
+Использование:
+
+```IMessenger<EmailMessage> outlook = new SimpleMessenger();```
+
+Здесь более частному типу присваивается более общий. Аналогично, код без ```in``` не скомпилируется.
+
+</details>
+
+
+<details>
+    <summary>
         Статьи
     </summary>
     
 1. [Делегаты func, action, predicate - Метанит](https://metanit.com/sharp/tutorial/3.33.php)
 2. [Делегаты и события - StackOverflow](https://ru.stackoverflow.com/questions/226505/event-и-delegate-в-чем-отличие)
 3. [Делегаты и события - StackOverflow](https://stackoverflow.com/questions/29155/what-are-the-differences-between-delegates-and-events)
+4. [Ковариантность и контравариантность в обобщенных интерфейсах](https://metanit.com/sharp/tutorial/3.27.php)
 </details>
 
 ## Коллекции
