@@ -1547,6 +1547,73 @@ public class FileReader
     }
 }
 ```
-
     
 </details>
+
+<details>
+    <summary>Задача 2</summary>
+
+Требуется написать класс, в котором происходит параллельный запрос в сеть (запрос в бд, к апи, etc.) с ограничением в N одновременных запросов.
+Для примера возьмем N=3.
+
+```
+internal class DummyWorker
+{
+    // 3 is maxDegreeofParallelism
+    // typically comes from constructor
+    private readonly SemaphoreSlim _semaphore = new(3);
+
+    public async Task<string?[]> GetResultAsync()
+    {
+        // typically comes as a method parameter
+        var urls = new string[] { "1", "2", "3", "4", "5" };
+
+        var tasks = urls.Select(QueryApiAsync);
+
+        var results = await Task.WhenAll(tasks);
+        
+        foreach (var result in results)
+        {
+            Console.WriteLine($"Got {(result is null ? "null" : result)} from QueryApiAsync");
+        }
+
+        return results;
+    }
+    // return value here is just an example
+    private async Task<string?> QueryApiAsync(string url)
+    {
+        // add timeout to semaphore wait
+        if (!await _semaphore.WaitAsync(10_000))
+        {
+            // log
+            return null;
+        }
+
+        try
+        {
+            // fake some IO bound work, throw if network fails, timeout reaches, etc
+            await Task.Delay(2_000);
+            var shouldThrow = Random.Shared.Next(0, 2) == 1;
+            if (shouldThrow)
+            {
+                throw new Exception();
+            }
+            return url;
+        }
+        // catch specific exceptions
+        catch (Exception ex)
+        {
+            // log ex
+            return null;
+        }
+        finally
+        {
+            _semaphore.Release();
+        }
+    }
+}
+```
+
+Примечания:
+1) При запросах в бд с EF Core нужно использовать ```IDbContextFactory``` и создавать контекст в каждом потоке, так как DbContext не потокобезопасен и выбрасывает исключение при попытке выполнения двух и более одновременных операций
+2) При запросах в сеть используем ```IHttpClientFactory```, не создаем клиентов вручную. Основные методы ```HttpClient``` потокобезопасны. Главное - корректно создать и задиспоузить ```HttpClient```.
