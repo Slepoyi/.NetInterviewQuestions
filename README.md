@@ -1150,6 +1150,23 @@ INNER JOIN используется, когда
 
 </details>
 
+<details>
+    <summary>
+        Как читать и вставлять/обновлять миллионы записей в бд
+    </summary>
+
+Для чтения
+- использовать Bulk операции (пакеты типа **BulkExtensions**, метод ```BulkRead```)
+- использовать EF Core с выключенным трекингом или Dapper + добавить батчинг
+- использовать низкоуровневый ```DataReader``` (в крайних случаях)
+
+Для вставки/обновления
+- использовать Bulk операции для EF Core (```BulkInsert```, ```BulkUpdate```)
+- обратить внимание на индексы в таблице, которые могут замедлять вставку/обновление
+
+</details>
+
+
 ## ООП, проектирование
 
 <details>
@@ -1389,8 +1406,6 @@ INNER JOIN используется, когда
 4. [Kafka & RabbitMQ - TProger](https://tproger.ru/articles/pochemu-my-ispolzuem-kafka-vmesto-rabbitmq-sravnenie-i-preimushhestva)
 
 </details>
-
-
 
 ## Отвлеченные темы
 
