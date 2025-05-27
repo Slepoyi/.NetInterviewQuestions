@@ -1557,53 +1557,51 @@ public class FileReader
 Для примера возьмем N=3.
 
 ```
-internal class DummyWorker
+public class ApiCaller()
 {
-    // 3 is maxDegreeofParallelism
-    // typically comes from constructor
     private readonly SemaphoreSlim _semaphore = new(3);
 
-    public async Task<string?[]> GetResultAsync()
+    public async Task MakeParallelApiCalls()
     {
-        // typically comes as a method parameter
-        var urls = new string[] { "1", "2", "3", "4", "5" };
+        var urls = new[]
+        {
+            "https://api.example.com/endpoint1",
+            "https://api.example.com/endpoint2",
+            "https://api.example.com/endpoint3",
+            "https://api.example.com/endpoint4",
+            "https://api.example.com/endpoint5"
+        };
 
-        var tasks = urls.Select(QueryApiAsync);
+        var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+        var token = cts.Token;
+
+        var tasks = urls.Select(x => QueryNetworkAsync(x, token));
 
         var results = await Task.WhenAll(tasks);
-        
-        foreach (var result in results)
-        {
-            Console.WriteLine($"Got {(result is null ? "null" : result)} from QueryApiAsync");
-        }
 
-        return results;
-    }
-    // return value here is just an example
-    private async Task<string?> QueryApiAsync(string url)
-    {
-        // add timeout to semaphore wait
-        if (!await _semaphore.WaitAsync(10_000))
+        for (int i = 0; i < results.Length; i++)
         {
-            // log
-            return null;
+            Console.WriteLine($"Result from {urls[i]}: {results[i]}");
         }
+    }
+
+    private async Task<char?> QueryNetworkAsync(string url, CancellationToken cancellationToken)
+    {
+        await _semaphore.WaitAsync(cancellationToken);
 
         try
         {
-            // fake some IO bound work, throw if network fails, timeout reaches, etc
-            await Task.Delay(2_000);
-            var shouldThrow = Random.Shared.Next(0, 2) == 1;
-            if (shouldThrow)
-            {
+            // imitate some IO bound work, throw when network is unavailable
+            await Task.Delay(2_000, cancellationToken);
+            var willThrow = Random.Shared.Next(0, 2) == 1;
+            if (willThrow)
                 throw new Exception();
-            }
-            return url;
+
+            return url.Last();
         }
-        // catch specific exceptions
         catch (Exception ex)
-        {
-            // log ex
+        { 
+            // can either log or return result with error so the caller can decide what to do next
             return null;
         }
         finally
@@ -1612,8 +1610,159 @@ internal class DummyWorker
         }
     }
 }
+
 ```
 
 Примечания:
 1) При запросах в бд с EF Core нужно использовать ```IDbContextFactory``` и создавать контекст в каждом потоке, так как DbContext не потокобезопасен и выбрасывает исключение при попытке выполнения двух и более одновременных операций
 2) При запросах в сеть используем ```IHttpClientFactory```, не создаем клиентов вручную. Основные методы ```HttpClient``` потокобезопасны. Главное - корректно создать и задиспоузить ```HttpClient```.
+
+</details>
+
+<details>
+    <summary>
+Задача 3
+    </summary>
+    
+Существует три метода, которые меняют информацию о товаре(изменяют состояние, изменяют состов тегов и задает вес).
+Так как в дальнейшем планируется добавить еще 10-20 методов которые меняют информацю о товаре(сами методы могут быть реализованы как nuget в другом сервисе)
+нужно реализовать единственный метод DoSomethingWithItem который в зависимости от входных параметров мог бы вызывать любое изменение товара.
+То есть методу может быть сказано "Поменяй состояние" или "Задай вес"
+
+```
+public class Product
+{
+    public int Id { get; set; }
+    public string Name { get; set; }
+    public double Weight { get; set; }
+    public string[] Tags { get; set; }
+    public bool IsActive { get; set; }
+}
+```
+
+
+Для решения воспользуемся паттернами команда и строитель.
+
+```
+public interface IProductCommand
+{
+    ValueTask ExecuteAsync(Product product);
+}
+
+// each command can be async for a number of reasons
+// all the dependencies and parameters are passed via constructor
+public class UpdateWeightCommand : IProductCommand
+{
+    public ValueTask ExecuteAsync(Product product)
+    {
+        product.Weight = 1;
+        return ValueTask.CompletedTask;
+    }
+}
+
+public class UpdateStateCommand : IProductCommand
+{
+    public ValueTask ExecuteAsync(Product product)
+    {
+        product.IsActive = true;
+        return ValueTask.CompletedTask;
+    }
+}
+
+public class UpdateTagsCommand : IProductCommand
+{
+    public ValueTask ExecuteAsync(Product product)
+    {
+        product.Tags = [];
+        return ValueTask.CompletedTask;
+    }
+}
+
+public class CompositeCommand(IEnumerable<IProductCommand> commands) : IProductCommand
+{
+    public async ValueTask ExecuteAsync(Product product)
+    {
+        foreach (var command in commands)
+        {
+            await command.ExecuteAsync(product);
+        }
+    }
+}
+```
+
+Небольшой билдер для команд
+
+```
+public class ProductCommandBuilder
+{
+    private readonly ICollection<IProductCommand> _commands = [];
+
+    public ProductCommandBuilder UpdateWeight()
+    {
+       _commands.Add(new UpdateWeightCommand());
+        return this;
+    }
+
+    public ProductCommandBuilder UpdateTags()
+    {
+        _commands.Add(new UpdateTagsCommand());
+        return this;
+    }
+
+    public ProductCommandBuilder UpdateState()
+    {
+        _commands.Add(new UpdateStateCommand());
+        return this;
+    }
+
+    public IProductCommand Build() => new CompositeCommand(_commands);
+}
+```
+Класс, выполняющий команду. В теории, реализация никогда не поменяется.
+
+```
+public class ProductUpdateService
+{
+    // could return operation result here
+    public async Task DoSomethingWithItemAsync(IProductCommand command)
+    {
+        if (command is null)
+            return;
+
+        try
+        {
+            // start transaction
+            // obtain product from db, redis, etc
+            var product = new Product();
+
+            await command.ExecuteAsync(product);
+
+            //commit transaction
+        }
+        catch (Exception ex)
+        {
+            // log error, rollback transaction
+        }
+    }
+}
+```
+
+Клиент для апдейтера
+```
+internal class ProductUpdateServiceClient
+{
+    public async Task UpdateGoodAsync()
+    {
+        var command = new ProductCommandBuilder()
+            .UpdateWeight()
+            .UpdateState()
+            .UpdateTags()
+            .Build();
+
+        var service = new ProductUpdateService();
+
+        await service.DoSomethingWithItemAsync(command);
+    }
+}
+```
+</details>
