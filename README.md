@@ -611,11 +611,25 @@ class SimpleMessenger : IMessenger<Message>
         SynchronizationContext - что такое, зачем нужен, как использовать.
     </summary>
 
-- Это класс-контракт, используемый для синхронизации (коммуникации) потоков
+Это класс-контракт, используемый для синхронизации (коммуникации) потоков.
+
 - ```SynchronizationContext.Current``` является синглтоном в рамках потока
-- Для разработчика работает как очередь сообщений, отправляя делегат асинхронно с помощью ```Post``` или синхронно с помощью ```Send```
-- Отсутствует в ASP .NET Core
+- Для разработчика работает как очередь сообщений, отправляя делегат асинхронно с помощью ```Post``` или синхронно с помощью ```Send``` для выполнения на целевом потоке
+- Отсутствует в ASP .NET Core и консольных приложениях
 - Нужен, например, чтобы при желании изменить UI в десктопе из другого потока, нужно было лишь передать контекст синхронизации
+- В библиотечном коде можно отключить захват SynchronizationContext используя ```ConfigureAwait(false)```.
+
+Пример. Следующий код выполнится на одном потоке в приложении Windows Forms и на разных в консольном приложении.
+
+```
+// thread1 equals thread2 for winforms but probably differ for console app
+var thread1 = Environment.CurrentManagedThreadId;
+
+await Task.Delay(1000); // Simulate I/O operation
+
+var thread2 = Environment.CurrentManagedThreadId;
+```
+
 </details>
 
 <details>
