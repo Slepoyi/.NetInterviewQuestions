@@ -923,6 +923,26 @@ HAVING фильтрует на уровне сгруппированных да�
 </details> 
 
 <details>
+    <summary>
+        Что такое CTE
+    </summary>
+
+CTE (Common Table Expressions) - это набор данных, получаемый из какой-то выборки данных.
+Позволяет создать именованный набор даных, который можно переиспользовать в разных местах одного запроса.
+
+```WITH DirReps(ManagerID, DirectReports) AS
+(
+    SELECT ManagerID, COUNT(*) 
+    FROM HumanResources.Employee AS e
+    WHERE ManagerID IS NOT NULL
+    GROUP BY ManagerID
+)
+SELECT ManagerID, DirectReports
+FROM DirReps
+ORDER BY ManagerID```
+</details>
+
+<details>
 <summary>
     Хранимые процедуры, функции, триггеры
 </summary>
