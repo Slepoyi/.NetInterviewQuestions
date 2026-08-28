@@ -1848,15 +1848,6 @@ Saga бывает двух видов.
 
 <details>
     <summary>
-        Гарантии доставки в RabbitMQ
-    </summary>
-
-
-
-</details>
-
-<details>
-    <summary>
     Что такое RabbitMQ, как он работает
     </summary>
 
@@ -2005,6 +1996,21 @@ Redis - это in-memory noSQL СУБД типа ключ-значение. Яв
 2. [микросервисы vs монолит vs сервис-ориентированная архитектура - Skillbox](https://skillbox.ru/media/code/servicebased-architecture-sem-raz-otmer-odin-raz-popili-monolit/)
 3. [Общение микросервисов - Habr](https://habr.com/ru/companies/maxilect/articles/677128/)
 4. [Kafka & MQ - TProger](https://tproger.ru/articles/pochemu-my-ispolzuem-kafka-vmesto-mq-sravnenie-i-preimushhestva)
+
+</details>
+
+<details>
+<summary>
+    CQRS
+</summary>
+
+Это подход, основная идея которого зашита в его названии (Command Query Responsibility Segregation) сводится к простому правилу:
+Объект, изменяющий состояние (Command), и объект, читающий состояние (Query), не должны быть одним и тем же объектом.
+
+В традиционном CRUD трёхслойке модель чтения и записи - GetUser и CreateUser - часто совпадают.
+Если же данные о пользователе чем-то обогащаются (GetUserWithAdditionalData), то это уже формально соответствует CQRS.
+
+Самая же частая реализация - физическое разделение чтения и записи. Пример - запись в PostgreSQL, чтение из MongoDB.
 
 </details>
 
